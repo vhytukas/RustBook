@@ -1,6 +1,6 @@
 use crate::side::Side;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Order {
     pub id: u64,
     pub price: u64,
