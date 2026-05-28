@@ -25,3 +25,26 @@ impl Trade {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{Side, Trade};
+
+    #[test]
+    fn new_sets_all_fields_correctly() {
+        let trade = Trade::new(1, 2, Side::Buy, 100, 10);
+
+        assert_eq!(trade.maker_id, 1);
+        assert_eq!(trade.taker_id, 2);
+        assert_eq!(trade.taker_side, Side::Buy);
+        assert_eq!(trade.price, 100);
+        assert_eq!(trade.qty, 10);
+    }
+
+    #[test]
+    fn new_sets_a_nonzero_timestamp() {
+        let trade = Trade::new(1, 2, Side::Buy, 100, 10);
+
+        assert_ne!(trade.timestamp, 0);
+    }
+}

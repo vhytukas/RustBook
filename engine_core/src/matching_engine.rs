@@ -111,3 +111,32 @@ impl MatchingEngine {
         DepthSnapshot::from_book(&self.book)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{MatchingEngine, Orderbook, Side};
+
+    #[test]
+    fn new_engine_has_clean_state() {
+        let book = Orderbook::new();
+        let engine = MatchingEngine::new(book);
+
+        assert!(engine.trades.is_empty());
+        assert!(engine.book.bids.is_empty());
+        assert!(engine.book.asks.is_empty());
+    }
+
+    #[test]
+    fn place_limit_order_returns_monotonically_increasing_ids() {
+        let book = Orderbook::new();
+        let mut engine = MatchingEngine::new(book);
+
+        let id1 = engine.place_limit_order(100, 1, Side::Buy);
+        let id2 = engine.place_limit_order(101, 1, Side::Buy);
+        let id3 = engine.place_limit_order(102, 1, Side::Buy);
+
+        assert_eq!(id1, 1);
+        assert_eq!(id2, 2);
+        assert_eq!(id3, 3);
+    }
+}
