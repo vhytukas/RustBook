@@ -25,13 +25,32 @@ impl MatchingEngine {
 
     pub fn place_limit_order(&mut self, price: u64, qty: u64, side: Side) -> u64 {
         let id: u64 = self.next_id;
+        self.next_id += 1;
 
         let order = Order::new(id, price, qty, side);
-        self.next_id += 1;
 
         self.match_or_insert(order);
 
         id
+    }
+
+    pub fn place_market_order(&mut self, qty: u64, side: Side) -> (u64, u64) {
+        let id = self.next_id;
+
+        self.next_id += 1;
+
+        let extreme = match side {
+            Side::Buy => u64::MAX,
+            Side::Sell => 0,
+        };
+
+        let mut order = Order::new(id, extreme, qty, side);
+
+        self.match_against_book(&mut order);
+
+        let filled = qty - order.qty;
+
+        (id, filled)
     }
 
     fn match_or_insert(&mut self, mut order: Order) {

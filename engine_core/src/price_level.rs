@@ -17,7 +17,8 @@ impl PriceLevel {
     }
 
     pub fn add_order(&mut self, order: Order) {
-        self.total_qty
+        self.total_qty = self
+            .total_qty
             .checked_add(order.qty)
             .expect("total_qty overflow at price level");
         self.orders.push_back(order);

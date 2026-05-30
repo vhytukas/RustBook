@@ -12,7 +12,7 @@ import SimulationPanel from "./components/SimulationPanel";
 import TopBar from "./components/TopBar";
 import TradesPanel from "./components/TradesPanel";
 
-const PRICE_SCALE = Number(engineRef.current.price_scale);
+const PRICE_SCALE = Number(WasmEngine.price_scale());
 
 const TABS = [
   {
@@ -127,20 +127,42 @@ function App() {
     }
   };
 
-  const handlePlaceOrder = ({ price, qty, side }) => {
+  const handlePlaceOrder = ({ type, price, qty, side }) => {
     if (!engineRef.current) {
       console.warn("WASM engine is not ready yet");
       return;
     }
 
     const wasmSide = side === "sell" ? WasmSide.Sell : WasmSide.Buy;
+    const sideLabel = side.toUpperCase();
 
     try {
+      if (type === "market") {
+        const result = engineRef.current.place_market_order(
+          BigInt(qty),
+          wasmSide,
+        );
+        const filled = Number(result[1]);
+        console.log("Placed market order:", { qty, side, filled });
+        refreshSnapshot();
+
+        if (filled === 0) {
+          toast.error(`Market ${sideLabel} ${qty}: no liquidity available`);
+        } else if (filled < qty) {
+          toast.warning(
+            `Market ${sideLabel}: partially filled ${filled} of ${qty}`,
+          );
+        } else {
+          toast.success(`Market ${sideLabel} ${qty}: filled in full`);
+        }
+        return;
+      }
+
       const scaledPrice = BigInt(Math.round(price * PRICE_SCALE));
       engineRef.current.place_limit_order(scaledPrice, BigInt(qty), wasmSide);
-      console.log("Placed order:", { price, qty, side, scaledPrice });
+      console.log("Placed limit order:", { price, qty, side, scaledPrice });
       refreshSnapshot();
-      toast.success(`Order placed: ${side.toUpperCase()} ${qty} @ ${price}`);
+      toast.success(`Limit ${sideLabel} ${qty} @ ${price}`);
     } catch (error) {
       console.error("WASM call failed:", error);
       toast.error("Failed to place order");

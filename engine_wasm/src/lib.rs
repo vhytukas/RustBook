@@ -38,6 +38,11 @@ impl WasmEngine {
         self.inner.place_limit_order(price, qty, side);
     }
 
+    pub fn place_market_order(&mut self, qty: u64, side: WasmSide) -> Vec<u64> {
+        let (id, filled) = self.inner.place_market_order(qty, side.into());
+        vec![id, filled]
+    }
+
     pub fn trades(&self) -> Result<JsValue, JsValue> {
         serde_wasm_bindgen::to_value(&self.inner.trades)
             .map_err(|e| JsValue::from_str(&e.to_string()))

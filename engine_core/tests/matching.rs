@@ -239,3 +239,91 @@ fn partial_fill_maker_qty_exceeds_taker() {
 
     assert_book_invariants(&engine.book);
 }
+
+#[test]
+fn market_buy_on_empty_book_returns_zero_filled() {
+    let mut engine = MatchingEngine::new(Orderbook::new());
+
+    let (id, filled) = engine.place_market_order(10, Side::Buy);
+
+    assert!(engine.trades.is_empty());
+    assert_eq!(filled, 0);
+    assert_eq!(id, 1);
+    assert!(engine.book.bids.is_empty());
+    assert!(engine.book.asks.is_empty());
+    assert!(engine.book.best_bid_price().is_none());
+    assert!(engine.book.best_ask_price().is_none());
+
+    assert_book_invariants(&engine.book);
+}
+
+#[test]
+fn market_buy_partial_fill_drops_residual() {
+    let mut engine = MatchingEngine::new(Orderbook::new());
+
+    let maker_id = engine.place_limit_order(100, 3, Side::Sell);
+    let (taker_id, filled) = engine.place_market_order(5, Side::Buy);
+
+    assert_eq!(engine.trades.len(), 1);
+    assert_eq!(engine.trades[0].maker_id, maker_id);
+    assert_eq!(engine.trades[0].taker_id, taker_id);
+    assert_eq!(engine.trades[0].taker_side, Side::Buy);
+    assert_eq!(engine.trades[0].price, 100);
+    assert_eq!(engine.trades[0].qty, 3);
+
+    assert_eq!(filled, 3);
+
+    assert!(engine.book.bids.is_empty());
+    assert!(engine.book.asks.is_empty());
+    assert!(engine.book.best_bid_price().is_none());
+    assert!(engine.book.best_ask_price().is_none());
+
+    assert_book_invariants(&engine.book);
+}
+
+#[test]
+fn market_buy_sweeps_multiple_levels() {
+    let mut engine = MatchingEngine::new(Orderbook::new());
+
+    let maker_a = engine.place_limit_order(100, 2, Side::Sell);
+    let maker_b = engine.place_limit_order(101, 3, Side::Sell);
+    let maker_c = engine.place_limit_order(102, 4, Side::Sell);
+
+    let (taker_id, filled) = engine.place_market_order(7, Side::Buy);
+
+    assert_eq!(engine.trades.len(), 3);
+
+    assert_eq!(engine.trades[0].maker_id, maker_a);
+    assert_eq!(engine.trades[0].taker_id, taker_id);
+    assert_eq!(engine.trades[0].taker_side, Side::Buy);
+    assert_eq!(engine.trades[0].price, 100);
+    assert_eq!(engine.trades[0].qty, 2);
+
+    assert_eq!(engine.trades[1].maker_id, maker_b);
+    assert_eq!(engine.trades[1].taker_id, taker_id);
+    assert_eq!(engine.trades[1].taker_side, Side::Buy);
+    assert_eq!(engine.trades[1].price, 101);
+    assert_eq!(engine.trades[1].qty, 3);
+
+    assert_eq!(engine.trades[2].maker_id, maker_c);
+    assert_eq!(engine.trades[2].taker_id, taker_id);
+    assert_eq!(engine.trades[2].taker_side, Side::Buy);
+    assert_eq!(engine.trades[2].price, 102);
+    assert_eq!(engine.trades[2].qty, 2);
+
+    assert_eq!(filled, 7);
+
+    assert!(engine.book.bids.is_empty());
+    assert_eq!(engine.book.asks.len(), 1);
+    assert_eq!(engine.book.asks[&102].orders.len(), 1);
+
+    let surviving_maker = engine.book.asks[&102].orders.front().unwrap();
+    assert_eq!(surviving_maker.id, maker_c);
+    assert_eq!(surviving_maker.qty, 2);
+
+    assert_eq!(engine.book.asks[&102].total_qty, 2);
+    assert!(engine.book.best_bid_price().is_none());
+    assert_eq!(engine.book.best_ask_price(), Some(102));
+
+    assert_book_invariants(&engine.book);
+}

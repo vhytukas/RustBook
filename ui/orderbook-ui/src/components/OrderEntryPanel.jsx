@@ -5,20 +5,35 @@ const QTY_MAX = 100;
 
 const OrderEntryPanel = ({ onLogEngine, onAddTestTrade, onPlaceOrder }) => {
   const [side, setSide] = useState("buy");
+  const [orderType, setOrderType] = useState("limit");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState("");
-  const hasEmptyFields = price.trim() === "" || qty.trim() === "";
+
+  const isMarket = orderType === "market";
+  const hasEmptyFields = isMarket
+    ? qty.trim() === ""
+    : price.trim() === "" || qty.trim() === "";
 
   const submitOrder = () => {
     if (hasEmptyFields) return;
 
-    const parsedPrice = Number(price);
     const parsedQty = Number(qty);
+    if (!Number.isFinite(parsedQty) || parsedQty < 0) return;
 
-    if (!Number.isFinite(parsedPrice) || !Number.isFinite(parsedQty)) return;
-    if (parsedPrice < 0 || parsedQty < 0) return;
+    if (isMarket) {
+      onPlaceOrder({
+        type: "market",
+        qty: Math.trunc(parsedQty),
+        side,
+      });
+      return;
+    }
+
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) return;
 
     onPlaceOrder({
+      type: "limit",
       price: parsedPrice,
       qty: Math.trunc(parsedQty),
       side,
@@ -50,8 +65,20 @@ const OrderEntryPanel = ({ onLogEngine, onAddTestTrade, onPlaceOrder }) => {
       </div>
 
       <div className="order-type-pills">
-        <button type="button" className="order-type-pill active">Limit</button>
-        <button type="button" className="order-type-pill disabled" disabled>Market</button>
+        <button
+          type="button"
+          className={`order-type-pill ${orderType === "limit" ? "active" : ""}`}
+          onClick={() => setOrderType("limit")}
+        >
+          Limit
+        </button>
+        <button
+          type="button"
+          className={`order-type-pill ${orderType === "market" ? "active" : ""}`}
+          onClick={() => setOrderType("market")}
+        >
+          Market
+        </button>
         <button type="button" className="order-type-pill disabled" disabled>Stop</button>
       </div>
 
@@ -63,8 +90,8 @@ const OrderEntryPanel = ({ onLogEngine, onAddTestTrade, onPlaceOrder }) => {
       </div>
 
       <form className="order-form">
-        <label>
-          Price
+        <label style={{ opacity: isMarket ? 0.4 : 1 }}>
+          Price {isMarket && <span style={{ fontSize: "0.6rem", color: "var(--text-dim)" }}>· n/a for market</span>}
           <div className="input-with-slider">
             <input
               type="number"
@@ -72,6 +99,7 @@ const OrderEntryPanel = ({ onLogEngine, onAddTestTrade, onPlaceOrder }) => {
               step="0.01"
               value={price}
               onChange={(event) => setPrice(event.target.value)}
+              disabled={isMarket}
             />
             <input
               type="range"
@@ -80,6 +108,7 @@ const OrderEntryPanel = ({ onLogEngine, onAddTestTrade, onPlaceOrder }) => {
               step="0.01"
               value={priceSliderValue}
               onChange={(event) => setPrice(event.target.value)}
+              disabled={isMarket}
             />
           </div>
         </label>
