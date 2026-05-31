@@ -1,4 +1,4 @@
-use crate::side::Side;
+use super::side::Side;
 use serde::*;
 
 #[derive(Serialize, Debug, Clone)]

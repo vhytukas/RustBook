@@ -1,4 +1,4 @@
-use crate::Side;
+use super::side::Side;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]

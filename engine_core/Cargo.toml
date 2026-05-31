@@ -8,6 +8,8 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 serde = { version = "1.0.228", features = ["derive"] }
+rand = { version = "0.8", default-features = false, features = ["std_rng"]}
+rand_chacha = "0.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3"

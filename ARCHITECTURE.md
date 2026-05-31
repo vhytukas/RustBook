@@ -202,14 +202,22 @@ npm run build
 | Trade price = maker price | Real exchange behavior (taker provides aggression, maker provides price). |
 | Lookup helpers return `Option<u64>`, not `Option<&mut PriceLevel>` | Avoids borrow-checker friction; idiomatic "lookup then mutate via `get_mut`". Read-only `&PriceLevel` returns are fine. |
 | `taker_side` recorded on every Trade | Engine knows the side at trade time; persisting it removes a leaky abstraction (UI can color-code without re-derivation). |
-| `PRICE_SCALE` lives in JS only | Keeps the Rust engine pure-integer. Tradeoff: drift risk if UI assumes wrong scale. |
+| `PRICE_SCALE` constant on `MatchingEngine`, exposed via wasm static method | Single source of truth. UI reads `WasmEngine.price_scale()` at module load — engine stays pure-integer, no drift risk. |
+| Market orders use extreme-price + IOC drop | Reuses the same `match_against_book` loop as limits (`u64::MAX` for buy, `0` for sell guarantees cross). Residual is dropped instead of inserted. Tradeoff: no protection against thin-book sweep. |
 | WASM via `wasm-bindgen` + `serde-wasm-bindgen` | Standard tooling; `u64` → `BigInt` preserves precision; struct serialization "just works." |
+
+## Order types supported
+
+- **Limit** — `place_limit_order(price, qty, side) -> order_id`. Crosses against opposite side if price allows, residual rests in the book at the order's limit price.
+- **Market** — `place_market_order(qty, side) -> (order_id, filled_qty)`. IOC semantics — uses an extreme internal price (`u64::MAX` for buy, `0` for sell) to cross everything available, then drops any unfilled residual instead of inserting.
+
+Not yet supported: IOC/FOK as separate flags, post-only, stop, stop-limit, hidden/iceberg, self-trade prevention.
 
 ## Testing
 
-16 unit tests across `price_level`, `orderbook`, `trade`, and `matching_engine` covering data-structure mechanics, insertion, best-price helpers, and engine contracts (clean state, monotonic ID allocation).
+16 unit tests across `price_level`, `orderbook`, `trade`, and `matching_engine` covering data-structure mechanics, insertion, best-price helpers, overflow handling (`checked_add`), and engine contracts (clean state, monotonic ID allocation).
 
-9 integration tests in `engine_core/tests/matching.rs` exercising the matching algorithm end-to-end through the public `place_limit_order` API. Scenarios: unmatched-rests, no-cross, exact fill, partial fill (taker > maker), partial fill (maker > taker), multi-level buy-side sweep, multi-level sell-side sweep, FIFO at same price.
+12 integration tests in `engine_core/tests/matching.rs` exercising the matching algorithm end-to-end through the public API. Scenarios: unmatched-rests, no-cross, exact fill, partial fill (taker > maker), partial fill (maker > taker), multi-level buy-side sweep, multi-level sell-side sweep, FIFO at same price, plus three market-order scenarios (empty-book no-fill, partial-fill drops residual, multi-level market sweep).
 
 Shared invariant helper in `engine_core/tests/common/mod.rs` enforces six structural rules after every integration test: no empty levels stored, quantity conservation (`total_qty` matches order sum), no zero-qty orders retained, price priority (no crossed book), FIFO per level (monotonic ids), and side correctness (orders on the right side of the book).
 
@@ -217,13 +225,11 @@ Run all: `cargo test -p engine_core`. Run integration only: `cargo test --test m
 
 ## Known limitations (today)
 
-- **Only limit orders.** No market, IOC, FOK, post-only, stop, hidden, iceberg.
-- **No cancel or amend.** Orders only leave the book by being matched.
-- **Trade history grows unbounded.** `trades()` clones the entire vector each call. Real fix is `drain_trades()` (mem::take).
+- **Limited order type set.** Limit and Market only. No IOC/FOK flags, post-only, stop, hidden, iceberg.
+- **No cancel or amend.** Orders only leave the book by being matched (or, for market orders, by IOC drop).
 - **No persistence.** Restart loses everything.
 - **Single symbol.** No symbol routing.
 - **No risk gates.** Fat-finger / notional / max-qty checks absent.
-- **Compiler warnings** for unused imports in `engine_wasm/src/lib.rs` and `engine_core/src/matching_engine.rs`.
-- **`PRICE_SCALE` lives only in UI** — engine and Rust tests can't enforce the contract.
+- **No order ID lookup index.** Finding an order by id requires scanning every level — O(N). Becomes blocking when cancel/amend are added (Stage 6).
 
 See [ROADMAP.md](ROADMAP.md) for what's planned and what's elite.

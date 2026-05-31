@@ -1,4 +1,4 @@
-use crate::{order::Order, price_level::PriceLevel, side::Side};
+use super::{order::Order, price_level::PriceLevel, side::Side};
 use serde::Serialize;
 use std::collections::BTreeMap;
 
@@ -50,11 +50,7 @@ impl Orderbook {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        order::{self, Order},
-        orderbook::{self, Orderbook},
-        side::Side,
-    };
+    use crate::{Order, Orderbook, Side};
 
     #[test]
     fn correctly_inserts_new_order() {
