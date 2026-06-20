@@ -1,9 +1,6 @@
 use super::{order::Order, price_level::PriceLevel, side::Side};
 use serde::Serialize;
-use std::{
-    collections::{BTreeMap, HashMap},
-    hash::Hash,
-};
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Serialize)]
 pub struct Orderbook {
@@ -11,6 +8,12 @@ pub struct Orderbook {
     pub asks: BTreeMap<u64, PriceLevel>,
     #[serde(skip)]
     pub index: HashMap<u64, (u64, Side)>,
+}
+
+impl Default for Orderbook {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Orderbook {
@@ -147,7 +150,7 @@ mod tests {
 
     #[test]
     fn best_prices_return_none_on_empty_book() {
-        let mut orderbook = Orderbook::new();
+        let orderbook = Orderbook::new();
 
         assert!(orderbook.best_ask_level().is_none());
         assert!(orderbook.best_bid_level().is_none());

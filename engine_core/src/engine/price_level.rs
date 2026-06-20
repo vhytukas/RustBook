@@ -8,6 +8,12 @@ pub struct PriceLevel {
     pub total_qty: u64,
 }
 
+impl Default for PriceLevel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PriceLevel {
     pub fn new() -> PriceLevel {
         PriceLevel {

@@ -438,7 +438,7 @@ fn cancel_nonexistent_returns_err() {
 fn cancel_after_partial_fill_returns_remaining_qty() {
     let mut engine = MatchingEngine::new(Orderbook::new());
     let maker_id = engine.place_limit_order(100, 10, Side::Sell).unwrap();
-    engine.place_limit_order(100, 3, Side::Buy); // partial fill, maker has 7 left
+    engine.place_limit_order(100, 3, Side::Buy).unwrap(); // partial fill, maker has 7 left
 
     let canceled_qty = engine.cancel_order(maker_id).unwrap();
 

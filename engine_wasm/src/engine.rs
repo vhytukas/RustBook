@@ -27,6 +27,12 @@ fn to_js_err<E: std::fmt::Debug>(e: E) -> JsValue {
     JsValue::from_str(&format!("{:?}", e))
 }
 
+impl Default for WasmEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[wasm_bindgen]
 impl WasmEngine {
     #[wasm_bindgen(constructor)]

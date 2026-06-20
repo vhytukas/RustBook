@@ -15,6 +15,10 @@ impl Simulator {
         Self { rng, config }
     }
 
+    // `next` here is the natural name for "produce the next event" — not the
+    // Iterator trait. Simulator is an infinite stream (never terminates), so
+    // implementing Iterator would force every caller to unwrap a Some forever.
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> SimEvent {
         // uniform random variable
         let u: f64 = self.rng.gen_range(f64::MIN_POSITIVE..1.0);

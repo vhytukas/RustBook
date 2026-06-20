@@ -1,5 +1,3 @@
-use crate::engine::order;
-
 use super::depth::*;
 use super::order::Order;
 use super::orderbook::Orderbook;
@@ -278,10 +276,10 @@ impl MatchingEngine {
     }
 
     fn check_risk(&self, price: Option<u64>, qty: u64) -> Result<(), RiskRejection> {
-        if let Some(max_qty) = self.risk.max_order_qty {
-            if qty > max_qty {
-                return Err(RiskRejection::QtyExceedsLimit);
-            }
+        if let Some(max_qty) = self.risk.max_order_qty
+            && qty > max_qty
+        {
+            return Err(RiskRejection::QtyExceedsLimit);
         }
 
         if let (Some(p), Some(max_notional)) = (price, self.risk.max_notional) {
@@ -293,10 +291,9 @@ impl MatchingEngine {
 
         if let (Some(p), Some(max_dev), Some(mid)) =
             (price, self.risk.max_price_deviation, self.mid_price())
+            && p.abs_diff(mid) > max_dev
         {
-            if p.abs_diff(mid) > max_dev {
-                return Err(RiskRejection::PriceTooFarFromMid);
-            }
+            return Err(RiskRejection::PriceTooFarFromMid);
         }
 
         Ok(())
