@@ -38,8 +38,6 @@ const TABS = [
 
 function App() {
   const engineRef = useRef(null);
-  const [wasmReady, setWasmReady] = useState(false);
-  const [wasmError, setWasmError] = useState("");
   const [depth, setDepth] = useState({ bids: [], asks: [] });
   const [tradesList, setTradesList] = useState([]);
   const [totalTrades, setTotalTrades] = useState(0);
@@ -153,11 +151,10 @@ function App() {
       }
 
       if (mounted) {
-        setWasmReady(true);
         refreshSnapshot();
       }
     } catch (err) {
-      if (mounted) setWasmError(String(err));
+      console.error("WASM engine failed to initialize:", err);
     }
 
     return () => {

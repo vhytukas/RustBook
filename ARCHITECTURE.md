@@ -201,7 +201,7 @@ class WasmEngine {
     orderbook_full_state(): MatchingEngine;    // entire engine state
     orderbook_depth_state(): DepthSnapshot;    // aggregated depth only
 
-    // Simulation (Stage 3)
+    // Simulation
     start_simulation(config: SimConfig): void; // throws on bad config
     burst(n: bigint): BurstMetrics;            // throws if sim not started
     simulation_active(): boolean;
@@ -288,7 +288,7 @@ npm run build
 | `engine/` module private, types re-exported flat at crate root | Facade pattern. Public API is `engine_core::Order`, not `engine_core::engine::order::Order`. Refactor internals freely without breaking downstream. |
 | `simulation/` module public | Sim is user-facing tooling (UI + benches consume it directly). Engine is implementation. Different visibility signals different stability promises. |
 | `ChaCha8Rng` (rand_chacha) over `StdRng` (rand) | `StdRng`'s algorithm isn't pinned across rand versions. `ChaCha8Rng` is — same byte stream on x86/ARM/WASM, today and in two years. Determinism contract requires this. |
-| Frozen RNG draw order in `Simulator::next()` | Stage 4 replay requires that "seed 42" always produces the identical event stream. Reordering draws would silently break old recordings. Order: dt → side → is_market → qty → price_offset. |
+| Frozen RNG draw order in `Simulator::next()` | Deterministic replay requires that a given seed always produces the identical event stream. Reordering draws would silently break old recordings. Order: dt → side → is_market → qty → price_offset. |
 | `run_burst` is a free function, not a method | Operates on both `MatchingEngine` and `Simulator`; neither owns the operation. Putting it on either would couple two layers that don't otherwise depend on each other. |
 | Burst measures wall-clock in JS, not Rust | `std::time::Instant` doesn't compile to `wasm32`. JS wraps the call with `performance.now()`. Keeps `engine_core` platform-agnostic. |
 | `drain_trades` (mem::take) instead of growing trades Vec | Bounds WASM linear memory; bounds serialization cost per refresh; enforces producer-consumer separation between engine and UI. Trade history lives in React state. |
@@ -302,13 +302,13 @@ Not yet supported: IOC/FOK as separate flags, post-only, stop, stop-limit, hidde
 
 ## Simulation
 
-`engine_core::simulation` is the synthetic-flow generator that feeds the engine. Used by the UI for the Burst N buttons; will be reused by Stage 4 (replay) and Stage 5 (criterion benches).
+`engine_core::simulation` is the synthetic-flow generator that feeds the engine. Used by the UI's burst buttons, the replay subsystem, and the criterion benchmarks — all share the same generator.
 
 **Layers:**
 - `Simulator` — owns a `ChaCha8Rng` seeded from `SimConfig`. `next()` returns one `SimEvent` per call. Pure: never touches the engine.
 - `run_burst(engine, sim, n)` — free function that loops `sim.next()` n times, dispatches each event to `place_limit_order` or `place_market_order`, returns `BurstMetrics { orders_placed, trades_executed }`.
 
-**Determinism contract.** Same seed in → same `(dt, side, kind, qty, price)` stream out, on any platform, today or in years. This is what makes Stage 4 replay possible: store the seed, regenerate the run. The `same_seed_produces_same_sequence` and `burst_with_same_seed_produces_identical_engine_state` tests guard this contract.
+**Determinism contract.** Same seed in → same `(dt, side, kind, qty, price)` stream out, on any platform, today or in years. This is what makes seed-based replay possible: store the seed, regenerate the run. The `same_seed_produces_same_sequence` and `burst_with_same_seed_produces_identical_engine_state` tests guard this contract.
 
 **Inter-arrival gaps** are sampled via inverse-transform sampling: `dt = -ln(u) / λ` where `u ~ Uniform(0,1)`, giving an exponential distribution with mean `1/λ`. This is the standard model of independent random events arriving over time. Burst mode ignores `dt`; replay/streaming will honor it.
 
@@ -326,18 +326,17 @@ Shared invariant helper in `engine_core/tests/common/mod.rs` enforces six struct
 
 Run all: `cargo test -p engine_core`. Run integration only: `cargo test --test matching` or `cargo test --test sim`.
 
-## Known limitations (today)
+## Known limitations
 
-- **Limited order type set.** Limit and Market only. No IOC/FOK flags, post-only, stop, hidden, iceberg.
-- **No cancel or amend.** Orders only leave the book by being matched (or, for market orders, by IOC drop).
-- **No persistence.** Restart loses everything.
-- **Single symbol.** No symbol routing.
-- **No risk gates.** Fat-finger / notional / max-qty checks absent.
-- **No order ID lookup index.** Finding an order by id requires scanning every level — O(N). Becomes blocking when cancel/amend are added (Stage 6).
-- **No credible performance numbers yet.** The UI's "Demo throughput" measures a browser → WASM → Rust → WASM → browser round-trip; not citeable as engine perf. Native criterion benches with p50/p99 distributions are Stage 5.
-- **No real-time sim pacing.** Burst mode ignores `dt_nanos` and fires as fast as possible. JS-driven Poisson streaming (honoring `dt`) is deferred until/unless needed.
+- **Limited order-type set.** Limit and Market only. No IOC/FOK as separate flags, no post-only, stop, stop-limit, hidden, or iceberg orders.
+- **Amend is size-down only.** Size-up is rejected; real exchanges typically allow it but treat it as cancel + re-place (losing FIFO priority). Forcing the caller to be explicit keeps semantics clean.
+- **No persistence.** Restart loses all state. No write-ahead log, no snapshotting.
+- **Single symbol.** No symbol routing — one book per process.
+- **Cancel is O(log L + K), not true O(1).** The `HashMap<id, (price, side)>` index avoids the O(N) scan, but in-level removal still walks the `VecDeque`. The arena + intrusive linked list upgrade is sketched but not implemented.
+- **Risk gate is in-process.** Real exchanges run risk checks in a separate gateway in front of the matching core for blast-radius isolation. The single-process integration here demonstrates the concept; the gateway split is a deployment-architecture question, not an engine one.
+- **No real-time simulation pacing.** Burst mode ignores `dt_nanos` to expose raw engine throughput. Real-time playback honoring `dt` exists only in the replay subsystem.
 
-## Order management & risk (Stage 6)
+## Order management & risk
 
 `MatchingEngine` exposes a full order lifecycle API on top of the matching primitives:
 
@@ -355,7 +354,7 @@ Cancel/amend need to find a specific order in the book without scanning every le
 
 This turns cancel cost from O(N_total_orders) into O(log L + K), where L = number of price levels and K = orders at that one level. At our typical book depth, that's ~sub-microsecond.
 
-The elite alternative is an arena-allocated intrusive doubly-linked list (true O(1) cancel including in-level removal). Requires `unsafe` Rust or the `slotmap` crate; deferred as a future upgrade.
+The production-grade alternative is an arena-allocated intrusive doubly-linked list (true O(1) cancel including in-level removal). It requires `unsafe` Rust or the `slotmap` crate and is a clear upgrade path when scale demands it.
 
 ### Cancel semantics
 
@@ -424,7 +423,7 @@ class WasmEngine {
 
 All error paths convert the Rust `Err` variant into a `JsValue` (debug-formatted string) which becomes a thrown JS exception. The UI catches it and shows a toast — no panics, no crashes.
 
-## Replay (Stage 4)
+## Replay
 
 `engine_core::simulation::Replayer` is a self-contained struct that owns its own `MatchingEngine` + `Simulator` + cursor. It exposes `step()` (apply one event, return its `dt_nanos`), `reset()` (clear engine + re-seed simulator from stored config), and `seek(target)` (forward = step the delta; backward = reset + replay). The WASM bridge (`WasmReplayer`) is a thin wrapper exposing the same methods plus `orderbook_depth_state` / `drain_trades`.
 
