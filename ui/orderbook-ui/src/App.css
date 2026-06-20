@@ -5,40 +5,76 @@
   padding: 1.5rem 1.25rem 3rem;
 }
 
-.topbar {
+.hero {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
 }
 
-.brand {
+.hero-brand {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  line-height: 1;
+  gap: 0.15rem;
 }
 
-.brand-mark {
+.hero-name {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
   color: var(--text);
 }
 
-.brand-sub {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
+.hero-tagline {
+  font-size: 0.75rem;
   color: var(--text-dim);
 }
 
-.topbar-center {
+.hero-perf {
   display: flex;
+  gap: 1.5rem;
   align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hero-perf-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.hero-perf-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hero-perf-value {
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.hero-github {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.hero-github:hover {
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 h2 {
@@ -317,38 +353,6 @@ input[type="range"]::-moz-range-thumb {
   font-size: 0.75rem;
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.05em;
-}
-
-.topbar-meta {
-  display: flex;
-  gap: 1.25rem;
-  align-items: center;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-}
-
-.topbar-meta-item {
-  display: flex;
-  gap: 0.35rem;
-  align-items: center;
-  color: var(--text-dim);
-}
-
-.topbar-meta-item strong {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.symbol-select {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: 3px;
-  padding: 0.4rem 0.7rem;
-  color: var(--text);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
 }
 
 .mm-row {
