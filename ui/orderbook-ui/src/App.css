@@ -114,17 +114,6 @@ h3 {
   background: transparent;
 }
 
-.tab-stage {
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #f5a623;
-  background: rgba(245, 166, 35, 0.08);
-  border: 1px solid rgba(245, 166, 35, 0.3);
-  padding: 0.12rem 0.4rem;
-  border-radius: 2px;
-}
-
 .wip-content {
   opacity: 0.45;
   filter: grayscale(0.3);

@@ -30,22 +30,12 @@ const DEFAULT_SIM_CONFIG = {
 };
 
 const TABS = [
-  {
-    id: "orders",
-    label: "Open Orders",
-    stage: "Stage 6",
-    Panel: OpenOrdersPanel,
-  },
-  {
-    id: "simulation",
-    label: "Simulation",
-    stage: "Stage 3",
-    Panel: SimulationPanel,
-  },
-  { id: "replay", label: "Replay", stage: "Stage 4", Panel: ReplayPanel },
-  { id: "metrics", label: "Metrics", stage: "Stage 5", Panel: MetricsPanel },
-  { id: "risk", label: "Risk Gate", stage: "Stage 6", Panel: RiskPanel },
-  { id: "mm", label: "Market Maker", stage: "Tier 2", Panel: MarketMakerPanel },
+  { id: "orders", label: "Open Orders", Panel: OpenOrdersPanel },
+  { id: "simulation", label: "Simulation", Panel: SimulationPanel },
+  { id: "replay", label: "Replay", Panel: ReplayPanel },
+  { id: "metrics", label: "Metrics", Panel: MetricsPanel },
+  { id: "risk", label: "Risk Gate", Panel: RiskPanel },
+  { id: "mm", label: "Market Maker", Panel: MarketMakerPanel },
 ];
 
 function App() {
@@ -345,7 +335,6 @@ function App() {
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.label}
-                <span className="tab-stage">{tab.stage}</span>
               </button>
             ))}
           </nav>
