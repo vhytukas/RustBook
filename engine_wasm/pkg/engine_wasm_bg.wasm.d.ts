@@ -1,0 +1,35 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_wasmengine_free: (a: number, b: number) => void;
+export const wasmengine_amend_order_qty: (a: number, b: bigint, c: bigint) => [number, number];
+export const wasmengine_cancel_order: (a: number, b: bigint) => [bigint, number, number];
+export const wasmengine_clear_risk_gate: (a: number) => void;
+export const wasmengine_default_risk_gate: () => [number, number, number];
+export const wasmengine_drain_trades: (a: number) => [number, number, number];
+export const wasmengine_new: () => number;
+export const wasmengine_orderbook_depth_state: (a: number) => [number, number, number];
+export const wasmengine_orderbook_full_state: (a: number) => [number, number, number];
+export const wasmengine_place_limit_order: (a: number, b: bigint, c: bigint, d: number) => [bigint, number, number];
+export const wasmengine_place_market_order: (a: number, b: bigint, c: number) => [number, number, number, number];
+export const wasmengine_price_scale: () => bigint;
+export const wasmengine_set_risk_gate: (a: number, b: any) => [number, number];
+export const wasmengine_trades: (a: number) => [number, number, number];
+export const __wbg_wasmreplayer_free: (a: number, b: number) => void;
+export const wasmreplayer_cursor: (a: number) => bigint;
+export const wasmreplayer_drain_trades: (a: number) => [number, number, number];
+export const wasmreplayer_new: (a: any) => [number, number, number];
+export const wasmreplayer_orderbook_depth_state: (a: number) => [number, number, number];
+export const wasmreplayer_reset: (a: number) => void;
+export const wasmreplayer_seek: (a: number, b: bigint) => void;
+export const wasmreplayer_step: (a: number) => bigint;
+export const wasm_start: () => void;
+export const wasmengine_burst: (a: number, b: bigint) => [number, number, number];
+export const wasmengine_simulation_active: (a: number) => number;
+export const wasmengine_start_simulation: (a: number, b: any) => [number, number];
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_start: () => void;

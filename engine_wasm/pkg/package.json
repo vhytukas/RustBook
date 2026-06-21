@@ -1,0 +1,17 @@
+{
+  "name": "engine_wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "engine_wasm_bg.wasm",
+    "engine_wasm.js",
+    "engine_wasm_bg.js",
+    "engine_wasm.d.ts"
+  ],
+  "main": "engine_wasm.js",
+  "types": "engine_wasm.d.ts",
+  "sideEffects": [
+    "./engine_wasm.js",
+    "./snippets/*"
+  ]
+}
