@@ -13,7 +13,6 @@ A limit-order-book matching engine in Rust, compiled to WebAssembly. The full en
 - **Full order lifecycle** — limit, market (IOC semantics), cancel (O(log L + K) via order-ID index), amend (size-down preserves FIFO priority)
 - **Pre-trade risk gate** — fat-finger / notional / mid-deviation checks before any order touches the book
 - **Realistic synthetic flow** — seeded ChaCha8 simulator with Poisson arrivals drives bursts up to 10k orders; deterministic across runs and platforms
-- **Honest performance framing** — the UI's live "demo throughput" is explicitly distinguished (via tooltip) from the citable native benchmarks in the Metrics tab
 
 ## Deterministic replay
 
